@@ -31,7 +31,7 @@ class LoginListener extends EventListener
             'location' => config('authentication-log.notifications.new-device.location') ? optional(geoip()->getLocation($this->request->ip()))->toArray() : null,
         ]);
 
-        if (! $newUser && config('authentication-log.notifications.new-device.enabled') && $this->getKnownDevices($user)) {
+        if (! $newUser && config('authentication-log.notifications.new-device.enabled') && ! $this->getKnownDevices($user)) {
             $newDevice = config('authentication-log.notifications.new-device.template') ?? NewDevice::class;
             $user->notify(new $newDevice($log));
         }
