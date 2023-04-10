@@ -21,7 +21,6 @@ class LoginListener extends EventListener
         }
 
         $user = $event->user;
-        $newUser = Carbon::parse($user->{$user->getCreatedAtColumn()})->diffInMinutes(Carbon::now()) < 1;
 
         $log = $user->authentications()->create([
             'ip_address' => $this->request->ip(),
@@ -31,21 +30,40 @@ class LoginListener extends EventListener
             'location' => config('authentication-log.notifications.new-device.location') ? optional(geoip()->getLocation($this->request->ip()))->toArray() : null,
         ]);
 
-        if (! $newUser && config('authentication-log.notifications.new-device.enabled') && ! $this->getKnownDevices($user)) {
+        if ($this->shouldNotify($user, $log)) {
             $newDevice = config('authentication-log.notifications.new-device.template') ?? NewDevice::class;
             $user->notify(new $newDevice($log));
         }
     }
 
-    protected function getKnownDevices($user): ?AuthenticationLog
+    protected function getKnownDevices($user, AuthenticationLog $log): ?AuthenticationLog
     {
         $parser = new Parser($this->request->userAgent());
 
         return $user->authentications()
+            ->where('id', '!=', $log->id)
             ->where('ip_address', $this->request->ip())
             ->where('browser', $parser->browser->name)
             ->where('browser_os', $parser->os->name)
             ->where('login_successful', true)
             ->first();
+    }
+
+    protected function userWasRecentlyCreated($user): bool
+    {
+        return Carbon::parse($user->{$user->getCreatedAtColumn()})->diffInMinutes(Carbon::now()) < 1;
+    }
+
+    protected function shouldNotify($user, AuthenticationLog $log): bool
+    {
+        if (! config('authentication-log.notifications.new-device.enabled')) {
+            return false;
+        }
+
+        if ($this->userWasRecentlyCreated($user)) {
+            return false;
+        }
+
+        return ! $this->getKnownDevices($user, $log);
     }
 }
