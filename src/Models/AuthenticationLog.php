@@ -59,8 +59,8 @@ class AuthenticationLog extends Model
         static::creating(static function ($model) {
             $parser = new Parser($model->user_agent);
 
-            $model->browser = $parser->browser->name;
-            $model->browser_os = $parser->os->name;
+            $model->browser = $parser->browser->getName();
+            $model->browser_os = $parser->os->getName();
         });
     }
 
