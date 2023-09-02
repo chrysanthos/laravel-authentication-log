@@ -36,24 +36,6 @@ class LoginListener extends EventListener
         }
     }
 
-    protected function getKnownDevices($user, AuthenticationLog $log): ?AuthenticationLog
-    {
-        $parser = new Parser($this->request->userAgent());
-
-        return $user->authentications()
-            ->where('id', '!=', $log->id)
-            ->where('ip_address', $this->request->ip())
-            ->where('browser', $parser->browser->name)
-            ->where('browser_os', $parser->os->name)
-            ->where('login_successful', true)
-            ->first();
-    }
-
-    protected function userWasRecentlyCreated($user): bool
-    {
-        return Carbon::parse($user->{$user->getCreatedAtColumn()})->diffInMinutes(Carbon::now()) < 1;
-    }
-
     protected function shouldNotify($user, AuthenticationLog $log): bool
     {
         if (! config('authentication-log.notifications.new-device.enabled')) {
@@ -64,6 +46,37 @@ class LoginListener extends EventListener
             return false;
         }
 
-        return ! $this->getKnownDevices($user, $log);
+        if ($this->isFirstLogin($user, $log)) {
+            return false;
+        }
+
+        if ($this->hasKnownDevices($user, $log)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function userWasRecentlyCreated($user): bool
+    {
+        return Carbon::parse($user->{$user->getCreatedAtColumn()})->diffInMinutes(Carbon::now()) < 1;
+    }
+
+    protected function isFirstLogin($user, AuthenticationLog $log): bool
+    {
+        return $user->authentications()->where('id', '!=', $log->id)->where('login_successful', true)->doesntExist();
+    }
+
+    protected function hasKnownDevices($user, AuthenticationLog $log): bool
+    {
+        $parser = new Parser($this->request->userAgent());
+
+        return $user->authentications()
+            ->where('id', '!=', $log->id)
+            ->where('ip_address', $this->request->ip())
+            ->where('browser', $parser->browser->name)
+            ->where('browser_os', $parser->os->name)
+            ->where('login_successful', true)
+            ->exists();
     }
 }
