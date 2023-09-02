@@ -9,13 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table(config('authentication-log.table_name'), function (Blueprint $table) {
-            $table->after('user_agent', function (Blueprint $table) {
-                $table->string('browser')->nullable()->index();
-                $table->string('browser_os')->nullable()->index();
-            });
-
-            $table->index('ip_address');
-            $table->index('login_successful');
+            $table->string('user_agent')->nullable()->change();
+            $table->index('user_agent');
         });
     }
 };

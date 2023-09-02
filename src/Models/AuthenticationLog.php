@@ -2,9 +2,11 @@
 
 namespace Rappasoft\LaravelAuthenticationLog\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use WhichBrowser\Parser;
 
 /**
@@ -72,5 +74,12 @@ class AuthenticationLog extends Model
     public function authenticatable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    protected function userAgent(): Attribute
+    {
+        return Attribute::make(
+            set: static fn ($value) => Str::limit($value, 200),
+        );
     }
 }
