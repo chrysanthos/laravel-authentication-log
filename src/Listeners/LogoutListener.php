@@ -39,8 +39,8 @@ class LogoutListener extends EventListener
 
         return $user->authentications()
             ->where('ip_address', $this->request->ip())
-            ->where('browser', $parser->browser->name)
-            ->where('browser_os', $parser->os->name)
+            ->where('browser', $parser->browser->getName())
+            ->where('browser_os', $parser->os->getName())
             ->orderByDesc('login_at')
             ->first();
     }

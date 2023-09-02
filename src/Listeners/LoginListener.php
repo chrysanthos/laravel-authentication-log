@@ -27,7 +27,7 @@ class LoginListener extends EventListener
             'user_agent' => $this->request->userAgent(),
             'login_at' => now(),
             'login_successful' => true,
-            'location' => config('authentication-log.notifications.new-device.location') ? optional(geoip()->getLocation($this->request->ip()))->toArray() : null,
+            'location' => null, // todo find reliable way to get location
         ]);
 
         if ($this->shouldNotify($user, $log)) {
@@ -74,8 +74,8 @@ class LoginListener extends EventListener
         return $user->authentications()
             ->where('id', '!=', $log->id)
             ->where('ip_address', $this->request->ip())
-            ->where('browser', $parser->browser->name)
-            ->where('browser_os', $parser->os->name)
+            ->where('browser', $parser->browser->getName())
+            ->where('browser_os', $parser->os->getName())
             ->where('login_successful', true)
             ->exists();
     }
